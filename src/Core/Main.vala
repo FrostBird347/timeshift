@@ -809,7 +809,47 @@ public class Main : GLib.Object{
 		log_debug("Main: create_exclude_list_for_backup()");
 		
 		var list = new Gee.ArrayList<string>();
-
+		
+		
+		// extract user filters from exclude_list_user and add them to exclude_list_home
+		// if not present we treat the user as if it's excluded
+		// if we don't do this the default filters within any user account will be ignored
+		//  -------------------------------------------------------
+		foreach(var user in current_system_users.values){
+			
+			if (user.is_system){ continue; }
+			
+			string exc_pattern = "%s/**".printf(user.home_path);
+			string inc_pattern = "+ %s/**".printf(user.home_path);
+			string inc_hidden_pattern = "+ %s/.**".printf(user.home_path);
+			
+			if (user.has_encrypted_home){
+				inc_pattern = "+ /home/.ecryptfs/%s/***".printf(user.name);
+				exc_pattern = "/home/.ecryptfs/%s/***".printf(user.name);
+			}
+			
+			bool include_hidden = exclude_list_user.contains(inc_hidden_pattern);
+			bool include_all = exclude_list_user.contains(inc_pattern);
+			bool exclude_all = !include_hidden && !include_all;
+			
+			if (exclude_all || include_hidden || include_all){
+				if (exclude_all){
+					// insert at the start to ensure these user entries always take priority over the home defaults added above
+					exclude_list_home.insert(0, exc_pattern);
+					exclude_list_user.remove(exc_pattern);
+				}
+				if (exclude_list_user.contains(inc_pattern)){
+					exclude_list_home.insert(0, inc_pattern);
+					exclude_list_user.remove(inc_pattern);
+				}
+				if (exclude_list_user.contains(inc_hidden_pattern)){
+					exclude_list_home.insert(0, inc_hidden_pattern);
+					exclude_list_user.remove(inc_hidden_pattern);
+				}
+			}
+		}
+		
+		
 		// add user entries from current setting
 		// user entry is first since rsync prioritizes the first
 		// inclusion/exclusion patterns seen
@@ -820,15 +860,7 @@ public class Main : GLib.Object{
 				list.add(path);
 			}
 		}
-
-		// add default entries ---------------------------
 		
-		foreach(string path in exclude_list_default){
-			if (!list.contains(path)){
-				list.add(path);
-			}
-		}
-
 		// add entries to exclude **decrypted** contents in $HOME
 		// decrypted contents should never be backed-up or restored
 		// this overrides all other user entries in exclude_list_user
@@ -855,36 +887,13 @@ public class Main : GLib.Object{
 				}
 			}
 		}
-
-		// exclude each user individually if not included in exclude_list_user
-
-		foreach(var user in current_system_users.values){
-
-			if (user.is_system){ continue; }
-
-			string exc_pattern = "%s/**".printf(user.home_path);
-			string inc_pattern = "+ %s/**".printf(user.home_path);
-			string inc_hidden_pattern = "+ %s/.**".printf(user.home_path);
-
-			if (user.has_encrypted_home){
-				inc_pattern = "+ /home/.ecryptfs/%s/***".printf(user.name);
-				exc_pattern = "/home/.ecryptfs/%s/***".printf(user.name);
-			}
-			
-			bool include_hidden = exclude_list_user.contains(inc_hidden_pattern);
-			bool include_all = exclude_list_user.contains(inc_pattern);
-			bool exclude_all = !include_hidden && !include_all;
-
-			if (exclude_all){
-				if (!exclude_list_user.contains(exc_pattern)){
-					exclude_list_user.add(exc_pattern);
-				}
-				if (exclude_list_user.contains(inc_pattern)){
-					exclude_list_user.remove(inc_pattern);
-				}
-				if (exclude_list_user.contains(inc_hidden_pattern)){
-					exclude_list_user.remove(inc_hidden_pattern);
-				}
+		
+		
+		// add default entries ---------------------------
+		
+		foreach(string path in exclude_list_default){
+			if (!list.contains(path)){
+				list.add(path);
 			}
 		}
 
