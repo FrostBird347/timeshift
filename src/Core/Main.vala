@@ -809,11 +809,12 @@ public class Main : GLib.Object{
 		log_debug("Main: create_exclude_list_for_backup()");
 		
 		var list = new Gee.ArrayList<string>();
+		var home_list = new Gee.ArrayList<string>();
 		
 		
-		// extract user filters from exclude_list_user and add them to exclude_list_home
-		// if not present we treat the user as if it's excluded
-		// if we don't do this the default filters within any user account will be ignored
+		// copy user filters from exclude_list_user to home_list
+		// if no filters are present we treat the user as if it's excluded and add them to exclude_list_user
+		// if we don't do this the default filters for anything within an account will be ignored while also being impossible to manually add to the user filter list
 		//  -------------------------------------------------------
 		foreach(var user in current_system_users.values){
 			
@@ -832,19 +833,16 @@ public class Main : GLib.Object{
 			bool include_all = exclude_list_user.contains(inc_pattern);
 			bool exclude_all = !include_hidden && !include_all;
 			
-			if (exclude_all || include_hidden || include_all){
-				if (exclude_all){
-					// insert at the start to ensure these user entries always take priority over the home defaults added above
-					exclude_list_home.insert(0, exc_pattern);
-					exclude_list_user.remove(exc_pattern);
-				}
-				if (exclude_list_user.contains(inc_pattern)){
-					exclude_list_home.insert(0, inc_pattern);
-					exclude_list_user.remove(inc_pattern);
-				}
-				if (exclude_list_user.contains(inc_hidden_pattern)){
-					exclude_list_home.insert(0, inc_hidden_pattern);
-					exclude_list_user.remove(inc_hidden_pattern);
+			if (include_hidden){
+				home_list.add(inc_hidden_pattern);
+			}
+			if (include_all){
+				home_list.add(inc_pattern);
+			}
+			if (exclude_all){
+				home_list.add(exc_pattern);
+				if (!exclude_list_user.contains(exc_pattern)) {
+					exclude_list_user.add(exc_pattern);
 				}
 			}
 		}
@@ -853,10 +851,12 @@ public class Main : GLib.Object{
 		// add user entries from current setting
 		// user entry is first since rsync prioritizes the first
 		// inclusion/exclusion patterns seen
+		// though we make sure to ignore entries copied to home_list,
+		// otherwise the defaults under user accounts will always be ignored
 		//  -------------------------------------------------------
 		
 		foreach(string path in exclude_list_user){
-			if (!list.contains(path)){
+			if (!list.contains(path) && !home_list.contains(path)){
 				list.add(path);
 			}
 		}
@@ -892,6 +892,14 @@ public class Main : GLib.Object{
 		// add default entries ---------------------------
 		
 		foreach(string path in exclude_list_default){
+			if (!list.contains(path)){
+				list.add(path);
+			}
+		}
+		
+		// add entries for users --------
+		
+		foreach(string path in home_list){
 			if (!list.contains(path)){
 				list.add(path);
 			}
