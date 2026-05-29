@@ -60,7 +60,6 @@ public class Main : GLib.Object{
 
 	public Gee.ArrayList<string> exclude_list_user;
 	public Gee.ArrayList<string> exclude_list_default;
-	public Gee.ArrayList<string> exclude_list_default_extra;
 	public Gee.ArrayList<string> exclude_list_home;
 	public Gee.ArrayList<string> exclude_list_restore;
 	public Gee.ArrayList<AppExcludeEntry> exclude_list_apps;
@@ -648,7 +647,6 @@ public class Main : GLib.Object{
 		
 		exclude_list_user = new Gee.ArrayList<string>();
 		exclude_list_default = new Gee.ArrayList<string>();
-		exclude_list_default_extra = new Gee.ArrayList<string>();
 		exclude_list_home = new Gee.ArrayList<string>();
 		exclude_list_restore = new Gee.ArrayList<string>();
 		exclude_list_apps = new Gee.ArrayList<AppExcludeEntry>();
@@ -715,7 +713,7 @@ public class Main : GLib.Object{
 
 			// add exclude entry for devices mounted to non-standard locations
 
-			exclude_list_default_extra.add(entry.mount_point + "/*");
+			exclude_list_default.add(entry.mount_point + "/*");
 		}
 
 		exclude_list_default.add("/root/.thumbnails");
@@ -732,26 +730,26 @@ public class Main : GLib.Object{
 
 		// default extra ------------------
 
-		exclude_list_default_extra.add("/root/.mozilla/firefox/*.default/Cache");
-		exclude_list_default_extra.add("/root/.mozilla/firefox/*.default/OfflineCache");
-		exclude_list_default_extra.add("/root/.opera/cache");
-		exclude_list_default_extra.add("/root/.kde/share/apps/kio_http/cache");
-		exclude_list_default_extra.add("/root/.kde/share/cache/http");
+		exclude_list_default.add("/root/.mozilla/firefox/*.default/Cache");
+		exclude_list_default.add("/root/.mozilla/firefox/*.default/OfflineCache");
+		exclude_list_default.add("/root/.opera/cache");
+		exclude_list_default.add("/root/.kde/share/apps/kio_http/cache");
+		exclude_list_default.add("/root/.kde/share/cache/http");
 
-		exclude_list_default_extra.add("/home/*/.mozilla/firefox/*.default/Cache");
-		exclude_list_default_extra.add("/home/*/.mozilla/firefox/*.default/OfflineCache");
-		exclude_list_default_extra.add("/home/*/.opera/cache");
-		exclude_list_default_extra.add("/home/*/.kde/share/apps/kio_http/cache");
-		exclude_list_default_extra.add("/home/*/.kde/share/cache/http");
+		exclude_list_default.add("/home/*/.mozilla/firefox/*.default/Cache");
+		exclude_list_default.add("/home/*/.mozilla/firefox/*.default/OfflineCache");
+		exclude_list_default.add("/home/*/.opera/cache");
+		exclude_list_default.add("/home/*/.kde/share/apps/kio_http/cache");
+		exclude_list_default.add("/home/*/.kde/share/cache/http");
 
-		exclude_list_default_extra.add("/var/cache/apt/archives/*");
-		exclude_list_default_extra.add("/var/cache/pacman/pkg/*");
-		exclude_list_default_extra.add("/var/cache/yum/*");
-		exclude_list_default_extra.add("/var/cache/dnf/*");
-		exclude_list_default_extra.add("/var/cache/eopkg/*");
-		exclude_list_default_extra.add("/var/cache/xbps/*");
-		exclude_list_default_extra.add("/var/cache/zypp/*");
-		exclude_list_default_extra.add("/var/cache/edb/*");
+		exclude_list_default.add("/var/cache/apt/archives/*");
+		exclude_list_default.add("/var/cache/pacman/pkg/*");
+		exclude_list_default.add("/var/cache/yum/*");
+		exclude_list_default.add("/var/cache/dnf/*");
+		exclude_list_default.add("/var/cache/eopkg/*");
+		exclude_list_default.add("/var/cache/xbps/*");
+		exclude_list_default.add("/var/cache/zypp/*");
+		exclude_list_default.add("/var/cache/edb/*");
 		
 		// default home ----------------
 
@@ -826,14 +824,6 @@ public class Main : GLib.Object{
 		// add default entries ---------------------------
 		
 		foreach(string path in exclude_list_default){
-			if (!list.contains(path)){
-				list.add(path);
-			}
-		}
-
-		// add default extra entries ---------------------------
-		
-		foreach(string path in exclude_list_default_extra){
 			if (!list.contains(path)){
 				list.add(path);
 			}
@@ -951,15 +941,6 @@ public class Main : GLib.Object{
 		foreach(string path in exclude_list_default){
 			if (!exclude_list_restore.contains(path)){
 				exclude_list_restore.add(path);
-			}
-		}
-
-		if (!mirror_system){
-			//add default_extra entries
-			foreach(string path in exclude_list_default_extra){
-				if (!exclude_list_restore.contains(path)){
-					exclude_list_restore.add(path);
-				}
 			}
 		}
 
